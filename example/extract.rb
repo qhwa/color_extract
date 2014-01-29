@@ -5,8 +5,7 @@ file = ARGV[0]
 if file
   puts "File: #{file}"
   ColorExtract::Analytics.new( file ).valuable_colors.each do |per, color|
-    print "  - #{color.html} "
-    print( '%#.2f%%' % (per*100) )
+    print "  - %#.2f%% %s %s" % [per*100, color.html, color.css_hsl]
     print "\n"
   end
 end
