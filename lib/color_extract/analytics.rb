@@ -45,7 +45,13 @@ module ColorExtract
       def remove_gray_colors
         @raw_colors.reject! do |per, color|
           hsl = color.to_hsl
-          hsl.s < 0.2 or hsl.l > 0.8
+          # 灰色系颜色
+          l, a, b = *rgb2lab(color.to_rgb)
+          hsl.s < 0.1 or
+            # 接近白色
+            l > 83 or
+            # 接近黑色
+            l < 25
         end
       end
 

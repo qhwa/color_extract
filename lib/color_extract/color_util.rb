@@ -14,10 +14,10 @@ module ColorExtract
     # 参考: 
     # - [CIELAB](http://en.wikipedia.org/wiki/CIELAB)
     # - [Color Difference](http://en.wikipedia.org/wiki/Color_difference)
-    def similarity( color1, color2 )
+    def similarity( color1, color2, ignore_lightness: false )
       l1, a1, b1 = *rgb2lab(color1.to_rgb)
       l2, a2, b2 = *rgb2lab(color2.to_rgb)
-      Math.sqrt( (l1-l2)**2 + (a1-a2)**2 + (b1-b2)**2 )
+      Math.sqrt( (ignore_lightness ? 0 : (l1-l2)**2) + (a1-a2)**2 + (b1-b2)**2 )
     end
 
     # Public: 判断两种颜色的色系相似程度
@@ -36,6 +36,11 @@ module ColorExtract
   
     # 来自 github 上的开源项目 chroma
     # https://github.com/gka/chroma.js/blob/master/src/conversions/rgb2lab.coffee
+    #
+    # color - RGB颜色
+    #
+    # Returns [l*, a*, b*] 值。
+    #         亮度（l*）的范围是（0-100）
     def rgb2lab(color)
       r, g, b = color.r * 255, color.g * 255, color.b * 255
       r = rgb_xyz r
@@ -65,7 +70,7 @@ module ColorExtract
       
       # TODO: ajust accent unless lock_accent
       # 白色会显得品质高档，因此尽量使用白色
-      if l1 < 85
+      if l1 < 83
         Color::RGB.from_html( '#FFFFFF' )
       else
         bg.to_hsl.tap { |c| c.l = 0.1 }.to_rgb

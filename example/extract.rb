@@ -8,4 +8,10 @@ if file
     print "  - %#.2f%% %s %s" % [per*100, color.html, color.css_hsl]
     print "\n"
   end
+
+  puts "palette:"
+  ColorExtract::Palette.new( file ).palette.each do |name, color|
+    print "  - %s : %s %s" % [ name.to_s.ljust(6), color.html, color.css_hsl ]
+    print "\n"
+  end
 end
