@@ -29,26 +29,29 @@ module ColorExtract
       # 目前采用最简单
       def gen_palette( accent_seed: nil )
         colors     = raw_colors || @analytics.valuable_colors.map {|per, c| c }
-        main_color = try_dither( colors.first )
+        main_color = colors.first
         sub_color1 = nil
         sub_color2 = nil
 
         if accent_seed
-          accent_color = try_dither( accent_seed )
+          accent_color = accent_seed
         else
           if colors.size > 1
             accent_color = colors.reverse[0..-2].compact.sort_by do |c|
               hue_simi   = hue_similarity(c, main_color)
               simi       = hue_simi > 60 ? -0.5*hue_simi + 120 : 1.5*hue_simi
+              l,a,b      = *rgb2lab(c)
               sat        = c.to_hsl.s
               # 按和主要颜色的差异系数由小到大排
-              # 饱和度越高的越有可能成为主色
-              simi**3 + 10000 * (1-sat)**2
-            end.last
+              # 饱和度越高、亮度越低的越有可能成为主色
+              # simi: 0-90
+              # l:    0-100
+              # sat:  0-1
+              hue_simi + sat * 10 - l * 7.01
+          end.last
 
-            accent_color = try_dither( accent_color )
           else
-            accent_color = try_dither( colors.first )
+            accent_color = colors.first
           end
         end
 
@@ -69,15 +72,11 @@ module ColorExtract
         text_color = readable_textcolor bg: accent_color, accent: main_color
         {
           main:   main_color,
-          sub1:   try_dither(sub_color1),
-          sub2:   try_dither(sub_color2),
+          sub1:   sub_color1,
+          sub2:   sub_color2,
           accent: accent_color,
           text:   text_color
         }
-      end
-
-      def try_dither( color )
-        color && pure( dither(color), s: nil, l: nil ) #dither( color )
       end
 
   end

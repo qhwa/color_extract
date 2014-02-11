@@ -11,6 +11,7 @@ if file
 
   puts "palette:"
   ColorExtract::Palette.new( file ).palette.each do |name, color|
+    next unless color
     print "  - %s : %s %s" % [ name.to_s.ljust(6), color.html, color.css_hsl ]
     print "\n"
   end

@@ -19,7 +19,7 @@ module ColorExtract
     private
       
       def calc_valuable_colors
-        @raw_colors = visible_colors
+        @colors = @raw_colors = visible_colors
 
         # 黑白灰是不具有色相的颜色，可以和任何色相的颜色搭配
         # 所以不是我们关心的颜色
@@ -36,6 +36,8 @@ module ColorExtract
         # 数量太少的颜色很有可能是主色的过渡
         # 可以去掉和主色同色系的低比例色彩
         remove_few_colors
+
+        return @colors
       end
 
       def visible_colors
@@ -43,7 +45,7 @@ module ColorExtract
       end
   
       def remove_gray_colors
-        @raw_colors.reject! do |per, color|
+        @colors.reject! do |per, color|
           hsl = color.to_hsl
           # 灰色系颜色
           l, a, b = *rgb2lab(color.to_rgb)
@@ -57,7 +59,7 @@ module ColorExtract
 
       def update_percents
         total = @raw_colors.reduce(0) {|sum, info| sum + info[0]}
-        @raw_colors.each do |info|
+        @colors.each do |info|
           per, c = *info
           info[0] = per / total
         end
@@ -66,9 +68,16 @@ module ColorExtract
       # TODO: 重构这个函数
       # 这里应该可以逻辑更加简单一些的
       def merge_similar_colors
-        link_colors
+
+        @colors.each do |info|
+          per, c = *info
+          info[1] = pure( dither( c ), s:nil, l:nil )
+        end
+
+        auto_link_colors!
+
         new_colors = {}
-        @raw_colors.each do |per, color|
+        @colors.each do |per, color|
           link_to = parent_color(color)
           if link_to
             new_colors[link_to] ||= 0
@@ -78,14 +87,14 @@ module ColorExtract
           end
         end
 
-        new_colors.map do |color_html, per|
+        @colors = new_colors.map do |color_html, per|
           [per, Color::RGB.from_html(color_html)]
         end
       end
 
-      def link_colors
+      def auto_link_colors!
         @merge_link = {}
-        colors      = @raw_colors
+        colors      = @colors
         len         = colors.size - 1
         
         0.upto(len) do |i|
@@ -111,7 +120,7 @@ module ColorExtract
       end
 
       def should_merge?( color1, color2 )
-        hue_similarity( color1, color2 ) <= 10 && similarity( color1, color2 ) < 15
+        hue_similarity( color1, color2 ) <= 20 && similarity( color1, color2 ) < 15
       end
 
       def parent_color color
@@ -124,7 +133,10 @@ module ColorExtract
       end
 
       def remove_few_colors
-        sorted_colors = @raw_colors.sort_by {|per,c| -per}
+        sorted_colors = @colors.sort_by {|per,c| -per}
+        if sorted_colors.size > 5
+          sorted_colors.reject! {|per, c| per < 0.0005 }
+        end
         common_colors = sorted_colors
         little_colors = sorted_colors.select {|per, c| per < 0.05 }
 
@@ -134,7 +146,7 @@ module ColorExtract
           end
         end
 
-        sorted_colors - little_colors
+        @colors = sorted_colors - little_colors
       end
 
   end

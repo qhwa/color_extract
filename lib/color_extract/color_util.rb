@@ -70,7 +70,7 @@ module ColorExtract
       
       # TODO: ajust accent unless lock_accent
       # 白色会显得品质高档，因此尽量使用白色
-      if l1 < 83
+      if l1 < 75
         Color::RGB.from_html( '#FFFFFF' )
       else
         bg.to_hsl.tap { |c| c.l = 0.1 }.to_rgb
@@ -91,11 +91,10 @@ module ColorExtract
     def dither( color )
       color.to_hsl.tap do |c|
         if c.s > 0.8
-          c.s -= 0.4
+          c.s -= (c.s) * 0.3
           c.l -= 0.1
         else
-          c.s += 0.3
-          c.l += 0.1
+          c.s += (1-c.s) * 0.5
         end
       end
     end
