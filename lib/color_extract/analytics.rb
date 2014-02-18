@@ -8,11 +8,14 @@ module ColorExtract
 
     include ColorUtil
 
+    attr_reader :merge_factor
+
     def initialize( img )
       @img = img
     end
 
-    def valuable_colors
+    def valuable_colors( merge_factor: 5 )
+      @merge_factor = merge_factor
       @colors ||= calc_valuable_colors
     end
 
@@ -41,7 +44,7 @@ module ColorExtract
       end
 
       def visible_colors
-        Colorscore::Histogram.new( @img, MAX_VISIBLE_COLORS).scores
+        p Colorscore::Histogram.new( @img, MAX_VISIBLE_COLORS).scores
       end
   
       def remove_gray_colors
@@ -71,7 +74,7 @@ module ColorExtract
 
         @colors.each do |info|
           per, c = *info
-          info[1] = pure( dither( c ), s:nil, l:nil )
+          info[1] = pure( dither( c ), s: 1, l:nil )
         end
 
         auto_link_colors!
@@ -94,7 +97,7 @@ module ColorExtract
 
       def auto_link_colors!
         @merge_link = {}
-        colors      = @colors
+        colors      = @colors.sort_by {|per, c| c.to_hsl.h }
         len         = colors.size - 1
         
         0.upto(len) do |i|
@@ -103,7 +106,6 @@ module ColorExtract
 
           (i+1).upto(len) do |j|
             per2, color2, lab2 = *colors[j]
-            hsl2 = color2.to_hsl
 
             if should_merge?(color, color2)
               # 相近的颜色，合并到面积更大的那种颜色
@@ -120,12 +122,12 @@ module ColorExtract
       end
 
       def should_merge?( color1, color2 )
-        hue_similarity( color1, color2 ) <= 20 && similarity( color1, color2 ) < 15
+        hue_similarity( color1, color2 ) <= 20 && similarity( color1, color2, ignore_lightness: true ) < @merge_factor
       end
 
       def parent_color color
         parent = @merge_link[color.html]
-        if parent
+        if parent && parent != color.html
           parent_color( Color::RGB.from_html(parent) )
         else
           color.html

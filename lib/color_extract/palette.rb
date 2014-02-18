@@ -12,7 +12,7 @@ module ColorExtract
       end
     end
 
-    attr_accessor :raw_colors, :main_color
+    attr_accessor :raw_colors, :main_color, :max_pri_brightness
 
     def initialize( file = nil )
       @analytics = Analytics.new( file ) if file
@@ -27,26 +27,37 @@ module ColorExtract
     def palettes( opts={} )
       @raw_colors ||= @analytics.valuable_colors.map {|per, c| c }
       @palettes   ||= gen_palettes( opts )
+      @palettes
     end
 
     private
 
       # 目前采用最简单
-      def gen_palettes( count: 1, accent_seed: nil )
-        count       = 1 if accent_seed
-        colors      = @raw_colors
-        @main_color = most_possible_main_color
-        palettes    = []
+      def gen_palettes( count: 1, accent_seed: nil, max_pri_brightness: 1 )
+        count               = 1 if accent_seed
+        @max_pri_brightness = max_pri_brightness
+        @main_color         = most_possible_main_color
 
-        count.times do |i|
-          palettes << gen_palette( accent_seed: accent_seed, fewest: i )
+        count.times.map do |i|
+          gen_palette( accent_seed: accent_seed, fewest_index: i )
         end
-
-        palettes
       end
 
-      def gen_palette( accent_seed: nil, fewest: 0 )
-        accent_color = accent_seed || most_possible_accent_color( fewest )
+      def most_possible_main_color
+        raw_colors.size > 0 ? raw_colors.first : Color::RGB.from_html( '#CCCCCC' )
+      end
+
+      # Private: 生成配色方案
+      #
+      # accent_seed:  指定的 primary 颜色
+      # fewest_index: 指定倒数第几个最少的颜色
+      #               0 - 最少的颜色;
+      #               1 - 倒数第二少的颜色;
+      #               以此类推
+      #
+      # Returns 一种配色方案
+      def gen_palette( accent_seed: nil, fewest_index: 0 )
+        accent_color = accent_seed || most_possible_accent_color( fewest_index )
         light, dark  = most_possible_around_colors( accent_color )
         text_color   = readable_textcolor bg: accent_color, accent: main_color
         {
@@ -58,13 +69,9 @@ module ColorExtract
         }
       end
 
-      def most_possible_main_color
-        raw_colors.size > 0 ? raw_colors.first : Color::RGB.from_html( '#CCCCCC' )
-      end
+      def most_possible_accent_color( fewest_index=0, &block )
 
-      def most_possible_accent_color( fewest=0, &block )
-
-        if raw_colors.size > fewest + 1
+        color = if raw_colors.size > fewest_index + 1
           # 除去最多的一种颜色
           # 因为最多的颜色是作为 back
           raw_colors.reverse[0..-2].compact.sort_by do |c|
@@ -76,11 +83,19 @@ module ColorExtract
             # 饱和度越高、亮度越低的越有可能成为主色
             # simi: 0-90; l: 0-100; sat:  0-1
             simi * 2 + sat * 10 - l * 7.01
-          end.reverse[fewest]
+          end.reverse[fewest_index]
         elsif raw_colors.size > 0
           raw_colors.first
         else
           Color::RGB.from_html '#000000'
+        end
+
+        if max_pri_brightness
+          color.to_hsl.tap do |c|
+            c.l = max_pri_brightness if c.l > max_pri_brightness
+          end.to_rgb
+        else
+          color
         end
       end
 
