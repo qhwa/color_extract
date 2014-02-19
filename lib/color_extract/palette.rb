@@ -37,10 +37,44 @@ module ColorExtract
         count               = 1 if accent_seed
         @max_pri_brightness = max_pri_brightness
         @main_color         = most_possible_main_color
+        @accent_colors      = []
 
-        count.times.map do |i|
+        palettes = count.times.map do |i|
           gen_palette( accent_seed: accent_seed, fewest_index: i )
+        end.compact.sort_by do |pal|
+          pal[:primary].to_hsl.h
         end
+
+        if palettes.size < count
+          last_primary_color = palettes.last[:primary].to_hsl
+          main_color         = palettes.last[:back].to_hsl
+          puts last_primary_color.html
+          (count - palettes.size ).times do |i|
+            if i.even?
+              color = last_primary_color.dup.tap do |c|
+                h   = c.h
+                h  += ((i+1)/2.0).ceil / 10.0
+                h  += 1 if h < 0 
+                c.h = h
+                c.l = 0.33
+              end.to_rgb
+            else
+              color = main_color.dup.tap do |c|
+                h   = c.h
+                h  -= ((i+1)/2.0).ceil / 10.0
+                h  += 1 if h < 0 
+                c.h = h
+                c.l = 0.33
+              end.to_rgb
+            end
+            next if already_have_similar_accent_color?( color )
+            palettes << gen_palette( accent_seed: color )
+          end
+        end
+
+        palettes.compact!
+
+        p palettes
       end
 
       def most_possible_main_color
@@ -58,15 +92,23 @@ module ColorExtract
       # Returns 一种配色方案
       def gen_palette( accent_seed: nil, fewest_index: 0 )
         accent_color = accent_seed || most_possible_accent_color( fewest_index )
-        light, dark  = most_possible_around_colors( accent_color )
-        text_color   = readable_textcolor bg: accent_color, accent: main_color
-        {
-          primary:        accent_color,
-          :'pri-light' => light,
-          :'pri-dark'  => dark,
-          back:           @main_color,
-          text:           text_color
-        }
+        if !accent_color || already_have_similar_accent_color?( accent_color )
+          return nil
+        else
+          @accent_colors << accent_color
+        end
+
+        if accent_color
+          light, dark  = most_possible_around_colors( accent_color )
+          text_color   = readable_textcolor bg: accent_color, accent: main_color
+          {
+            primary:        accent_color,
+            :'pri-light' => light,
+            :'pri-dark'  => dark,
+            back:           @main_color,
+            text:           text_color
+          }
+        end
       end
 
       def most_possible_accent_color( fewest_index=0, &block )
@@ -84,18 +126,20 @@ module ColorExtract
             # simi: 0-90; l: 0-100; sat:  0-1
             simi * 2 + sat * 10 - l * 7.01
           end.reverse[fewest_index]
-        elsif raw_colors.size > 0
-          raw_colors.first
-        else
-          Color::RGB.from_html '#000000'
         end
 
-        if max_pri_brightness
+        if max_pri_brightness && color
           color.to_hsl.tap do |c|
             c.l = max_pri_brightness if c.l > max_pri_brightness
           end.to_rgb
         else
           color
+        end
+      end
+
+      def already_have_similar_accent_color?( color )
+        @accent_colors.any? do |c|
+          similarity( c, color, ignore_lightness: false ) < 20
         end
       end
 
