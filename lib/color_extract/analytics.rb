@@ -74,7 +74,7 @@ module ColorExtract
 
         @colors.each do |info|
           per, c = *info
-          info[1] = pure( dither( c ), s: 1, l:nil )
+          info[1] = pure( dither( c ), s: nil, l:nil )
         end
 
         auto_link_colors!
