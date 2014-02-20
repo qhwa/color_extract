@@ -108,9 +108,17 @@ module ColorExtract
       end.to_rgb
     end
 
+    def darken( hsl_color, percent )
+      hsl_color.tap { |c| darken!( c, percent ) }
+    end
+
     def darken!( hsl_color, percent )
       l = hsl_color.l
       hsl_color.l -= (1-l) * percent
+    end
+
+    def lighten( hsl_color, percent )
+      hsl_color.tap { |c| lighten!( c, percent ) }
     end
 
     def lighten!( hsl_color, percent )

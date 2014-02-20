@@ -46,6 +46,11 @@ module ColorExtract
         end
 
         if palettes.size < count
+
+          if palettes.empty?
+            return preset_palettes( count: count )
+          end
+
           last_primary_color = palettes.last[:primary].to_hsl
           main_color         = palettes.last[:back].to_hsl
           puts last_primary_color.html
@@ -74,9 +79,23 @@ module ColorExtract
 
         palettes.compact!
 
-        p palettes
+        palettes
       end
 
+      def preset_palettes( count: 1 )
+        0.upto(count).map do |i|
+          accent = Color::HSL.from_fraction( i*(1.0 /(count+1)), 0.95, 0.4 )
+          main   = Color::RGB.from_html( '#ffffff' )
+          { 
+            :primary      => accent.to_rgb,
+            :back         => main,
+            :"pri-dark"   => darken( accent, 0.2 ).to_rgb,
+            :"pri-light"  => lighten( accent, 0.2 ).to_rgb,
+            :"text"       => readable_textcolor( bg: accent.to_rgb, accent: main.to_rgb )
+          }
+        end
+      end
+          
       def most_possible_main_color
         raw_colors.size > 0 ? raw_colors.first : Color::RGB.from_html( '#CCCCCC' )
       end
@@ -167,7 +186,7 @@ module ColorExtract
         sub_color2 ||= accent_color.to_hsl.tap {|c| darken!(c, 0.2) }.to_rgb
         [sub_color1, sub_color2]
       end
-          
+
   end
 
 end
