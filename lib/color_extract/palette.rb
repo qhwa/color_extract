@@ -19,7 +19,6 @@ module ColorExtract
     end
 
     # 目前只生成一种配色方案
-    # TODO:生成参数可以配置的配色方案
     def palette( accent_seed: nil )
       palettes( count: 1, accent_seed: accent_seed ).first
     end
@@ -27,7 +26,6 @@ module ColorExtract
     def palettes( opts={} )
       @raw_colors ||= @analytics.valuable_colors.map {|per, c| c }
       @palettes   ||= gen_palettes( opts )
-      @palettes
     end
 
     private
@@ -77,9 +75,7 @@ module ColorExtract
           end
         end
 
-        palettes.compact!
-
-        palettes
+        palettes.compact
       end
 
       def preset_palettes( count: 1 )
