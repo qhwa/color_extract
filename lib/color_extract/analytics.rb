@@ -57,9 +57,16 @@ module ColorExtract
         return @colors
       end
 
+    public
+
+      # Public: 获取可见的颜色，这里的颜色是没有经过相似合并的
+      # 
+      # Returns 可见颜色数组，数组每个元素都是 [percent, color] 结构
       def visible_colors
-        p Colorscore::Histogram.new( @img, MAX_VISIBLE_COLORS).scores
+        Colorscore::Histogram.new( @img, MAX_VISIBLE_COLORS).scores
       end
+
+    private
   
       def remove_gray_colors
         @colors.reject! do |per, color|
