@@ -4,6 +4,15 @@ module ColorExtract
 
   MAX_VISIBLE_COLORS = 128
 
+  # Public: 分析图片的色彩信息，相似的颜色会合并在一起
+  #
+  # Example:
+  # 
+  #   img = "http://distilleryimage2...jpg"
+  #   colors = ColorExtract::Analytics.new( img ).valuable_colors
+  #   colors.each do |percent, color|
+  #     puts "#{color.html} : #{percent}"
+  #   end
   class Analytics
 
     include ColorUtil
@@ -14,6 +23,11 @@ module ColorExtract
       @img = img
     end
 
+    # Public: 获取颜色数组
+    #
+    # - merge_factor: 颜色合并系数，数字越大，相似的颜色越容易被合并在一起
+    #
+    # Returns 颜色数组，数组的每个元素都是 [percent, color] 结构
     def valuable_colors( merge_factor: 5 )
       @merge_factor = merge_factor
       @colors ||= calc_valuable_colors
