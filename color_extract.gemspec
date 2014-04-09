@@ -8,8 +8,8 @@ Gem::Specification.new do |spec|
   spec.version       = ColorExtract::VERSION
   spec.authors       = ["qhwa"]
   spec.email         = ["qhwa@163.com"]
-  spec.summary       = %q{extract colors from an image}
-  spec.description   = %q{TODO: Write a longer description. Optional.}
+  spec.summary       = %q{extract color information from images}
+  spec.description   = %q{extract color information from images}
   spec.homepage      = "https://github.com/qhwa/color_extract"
   spec.license       = "MIT"
 
