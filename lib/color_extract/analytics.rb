@@ -63,7 +63,11 @@ module ColorExtract
       # 
       # Returns 可见颜色数组，数组每个元素都是 [percent, color] 结构
       def visible_colors
-        Colorscore::Histogram.new( @img, MAX_VISIBLE_COLORS).scores
+        Colorscore::Histogram.new( @img, MAX_VISIBLE_COLORS).scores.reject do |per, color|
+          # 由于不知道的原因（待查），colorscore 返回的队列中
+          # 有些颜色是 nil， 这些应该去除，以免影响后续计算。
+          color.nil?
+        end
       end
 
     private
